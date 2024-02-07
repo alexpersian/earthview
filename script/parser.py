@@ -5,7 +5,7 @@ import urllib.request
 import json
 
 result = []
-file = open('earthview.json','a')
+file = open('earthview.json', 'a')
 
 pid = open('photo_ids.json')
 photo_ids = json.load(pid)
@@ -28,7 +28,7 @@ def load_url(url, timeout):
         if 'geocode' in data:
             geocode = data.get('geocode', '')
             country = geocode.get('country', '')
-            region = geocode.get('region', '')
+            region = geocode.get('region') or geocode.get('region') or geocode.get('locality') or geocode.get('administrative_area_level_2') or geocode.get('administrative_area_level_1', '')
         else:
             country = data.get('country', '')
             region = data.get('region', '')
@@ -42,7 +42,7 @@ def load_url(url, timeout):
         return a
 
 # We can use a with statement to ensure threads are cleaned up promptly
-with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
     # Start the load operations and mark each future with its URL
     future_to_url = {executor.submit(load_url, url, 60): url for url in URLS}
     for future in concurrent.futures.as_completed(future_to_url):
@@ -58,9 +58,9 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             print("Fetched -> | " + str(url.split('/')[-1]) + " | ")
 
 def sort_by_id(e):
-    return e['id']
+    return int(e['id'])
 result.sort(key=sort_by_id)
 
-final_file = json.dumps(result,indent=2) #Dump the json file finally
+final_file = json.dumps(result,indent=4, ensure_ascii=False) #Dump the json file finally
 file.write(final_file)
 file.close()
